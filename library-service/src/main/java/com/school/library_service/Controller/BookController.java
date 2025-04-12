@@ -20,6 +20,14 @@ public class BookController {
         BookDTO savedBook = bookService.saveBook(bookDTO);
         return ResponseEntity.status(201).body(savedBook);
     }
+    @PutMapping("/assignBookToUser/{bookId}/{userId}")
+    public ResponseEntity<BookDTO> assignBookToUser(
+            @PathVariable Long bookId,
+            @PathVariable Long userId) {
+
+        BookDTO updatedBook = bookService.assignBookToUser(bookId, userId);
+        return ResponseEntity.ok(updatedBook);
+    }
 
     @GetMapping("/getAllBooks/")
     public ResponseEntity<List<BookDTO>> getAllBooks() {
@@ -30,14 +38,10 @@ public class BookController {
     public ResponseEntity<BookDTO> getBookById(@PathVariable Long id) {
         return ResponseEntity.ok(bookService.getBookById(id));
     }
-
-
-
     @PutMapping("/updateBook/{id}")
     public ResponseEntity<BookDTO> updateBook(@PathVariable Long id, @RequestBody BookDTO bookDTO) {
         return ResponseEntity.ok(bookService.updateBook(id, bookDTO));
     }
-
     @DeleteMapping("/deleteBook/{id}")
     public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
         bookService.deleteBook(id);

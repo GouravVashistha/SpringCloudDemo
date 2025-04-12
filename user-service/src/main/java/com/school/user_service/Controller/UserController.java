@@ -1,9 +1,12 @@
 package com.school.user_service.Controller;
 
 import com.school.user_service.DTO.Book;
+import com.school.user_service.DTO.UserDTO;
 import com.school.user_service.Entity.User;
+import com.school.user_service.Exceptions.UserNotFoundException;
 import com.school.user_service.Service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,16 +20,19 @@ public class UserController {
     private UserService userService;
 
     @PostMapping("/create")
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        User savedUser = userService.saveUser(user);
-        return ResponseEntity.status(201).body(savedUser);
+    public ResponseEntity<User> createUser(@RequestBody UserDTO userDTO) {
+        User user = new User();
+        user.setName(userDTO.getName());
+        user.setEmail(userDTO.getEmail());
+        user.setPassword(userDTO.getPassword());
+        User saveUser = userService.saveUser(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saveUser);
     }
 
     @GetMapping("/getUser/{userId}")
     public ResponseEntity<User> getUser(@PathVariable Long userId) {
-        return userService.getUserById(userId)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        User user = userService.getUserById(userId).orElseThrow(()-> new UserNotFoundException("User not found with ID: " + userId));
+        return ResponseEntity.ok(user);
     }
 
 

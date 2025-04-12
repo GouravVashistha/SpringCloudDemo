@@ -2,6 +2,8 @@ package com.school.user_service.ServiceImpl;
 
 import com.school.user_service.DTO.Book;
 import com.school.user_service.Entity.User;
+import com.school.user_service.Exceptions.UserAllReadyExists;
+import com.school.user_service.Exceptions.UserNotFoundException;
 import com.school.user_service.Repository.UserRepository;
 import com.school.user_service.Service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User saveUser(User user) {
+        if(userRepository.existsByEmail(user.getEmail())){
+            throw new UserAllReadyExists("User already exists with email: " + user.getEmail());
+        }
         return userRepository.save(user);
     }
 
@@ -68,7 +73,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(Long userId) {
-        userRepository.deleteById(userId);
+       User user = userRepository.findById(userId).orElseThrow(()-> new UserNotFoundException("User not found with ID: " + userId));
     }
 
 //    @Override

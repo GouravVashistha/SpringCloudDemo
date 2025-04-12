@@ -69,4 +69,25 @@ public class BookServiceImpl implements BookService {
         return bookRepository.findByUserId(userId); // Fetch books borrowed by the user
     }
 
+    public BookDTO assignBookToUser(Long bookId, Long userId) {
+        // Fetch the book entity from the repository
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Book not found"));
+
+        // Check if the book is available
+        if (book.getQuantity() <= 0) {
+            throw new RuntimeException("Book not available");
+        }
+
+        // Assign the book to the user and reduce the quantity
+        book.setUserId(userId);          // Assign to user
+        book.setQuantity(book.getQuantity() - 1); // Reduce stock
+
+        // Save the updated book entity back to the repository
+        Book updatedBook = bookRepository.save(book);
+
+        // Convert the updated book entity to BookDTO and return it
+        return modelMapper.map(updatedBook, BookDTO.class);
+    }
+
 }

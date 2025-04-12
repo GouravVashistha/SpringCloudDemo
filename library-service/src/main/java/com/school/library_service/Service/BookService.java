@@ -14,4 +14,6 @@ public interface BookService {
     List<BookDTO> getBooksByUserId(Long userId);
 
     List<Book> findByUserId(Long userId);
+
+    BookDTO assignBookToUser(Long bookId, Long userId);
 }
