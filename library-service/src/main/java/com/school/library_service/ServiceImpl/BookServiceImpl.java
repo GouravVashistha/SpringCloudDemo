@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class BookServiceImpl implements BookService {
-
     @Autowired
     private BookRepository bookRepository;
 
@@ -23,7 +22,7 @@ public class BookServiceImpl implements BookService {
     @Override
     public BookDTO saveBook(BookDTO bookDTO) {
         Book book = modelMapper.map(bookDTO, Book.class);
-        book.setId(null);  // Ensure Hibernate auto-generates ID
+        book.setId(null);
         book = bookRepository.save(book);
         return modelMapper.map(book, BookDTO.class);
     }
@@ -44,18 +43,22 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public BookDTO updateBook(Long id, BookDTO bookDTO) {
-        if (bookRepository.existsById(id)) {
-            bookDTO.setId(id);
-            Book book = modelMapper.map(bookDTO, Book.class);
-            book = bookRepository.save(book);
-            return modelMapper.map(book, BookDTO.class);
-        }
-        return null;
+        return bookRepository.findById(id).map(book -> {
+            book.setTitle(bookDTO.getTitle());
+            book.setAuthor(bookDTO.getAuthor());
+            book.setPublisher(bookDTO.getPublisher());
+            book.setQuantity(bookDTO.getQuantity());
+            return modelMapper.map(bookRepository.save(book), BookDTO.class);
+        }).orElse(null);
     }
 
     @Override
-    public void deleteBook(Long id) {
+    public String deleteBook(Long id) {
+        if (!bookRepository.existsById(id)) {
+            return "Cannot delete book because it does not exist in the library.";
+        }
         bookRepository.deleteById(id);
+        return "Book deleted successfully.";
     }
 
     @Override
@@ -64,30 +67,30 @@ public class BookServiceImpl implements BookService {
                 .map(book -> modelMapper.map(book, BookDTO.class))
                 .collect(Collectors.toList());
     }
+
     @Override
-    public List<Book> findByUserId(Long userId) {
-        return bookRepository.findByUserId(userId); // Fetch books borrowed by the user
+    public boolean issueBookToUser(Long bookId, Long userId) {
+        Book book = bookRepository.findById(bookId).orElse(null);
+        if (book == null) return false;
+
+        if (book.getQuantity() > 0) {
+            book.setUserId(userId);
+            book.setQuantity(book.getQuantity() - 1);
+            bookRepository.save(book);
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    public BookDTO assignBookToUser(Long bookId, Long userId) {
-        // Fetch the book entity from the repository
-        Book book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new RuntimeException("Book not found"));
-
-        // Check if the book is available
-        if (book.getQuantity() <= 0) {
-            throw new RuntimeException("Book not available");
+    @Override
+    public void returnBookFromUser(Long bookId, Long userId) {
+        Book book = bookRepository.findById(bookId).orElse(null);
+        if (book != null && userId.equals(book.getUserId())) {
+            book.setUserId(null);
+            book.setQuantity(book.getQuantity() + 1);
+            bookRepository.save(book);
         }
-
-        // Assign the book to the user and reduce the quantity
-        book.setUserId(userId);          // Assign to user
-        book.setQuantity(book.getQuantity() - 1); // Reduce stock
-
-        // Save the updated book entity back to the repository
-        Book updatedBook = bookRepository.save(book);
-
-        // Convert the updated book entity to BookDTO and return it
-        return modelMapper.map(updatedBook, BookDTO.class);
     }
 
 }
